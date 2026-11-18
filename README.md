@@ -4,6 +4,67 @@
 
 它会保存文章全文、原始 HTML、本地图片和文章元数据，并生成一个可以直接用浏览器打开的离线阅读册。后续同步时只补新文章；如果作者改过文章，工具会留下旧版和差异；如果文章在线上消失或变成删除提示，默认保留本地最后一版，避免归档被意外覆盖。
 
+## 安装
+
+如果你的 AI 或自动化宿主支持从 GitHub 接入技能，可以把这个仓库克隆到宿主配置的技能目录。技能目录的位置由宿主决定，不要直接假定某个固定路径：
+
+```bash
+git clone https://github.com/xgonggong/xueqiu-archive.git <技能目录>/xueqiu-archive
+```
+
+安装后，目录根部应当直接看到 `SKILL.md`，而不是多套一层 `xueqiu-archive/xueqiu-archive/`。可以用下面的命令检查：
+
+```bash
+test -f <技能目录>/xueqiu-archive/SKILL.md
+python <技能目录>/xueqiu-archive/scripts/archive.py --help
+```
+
+Windows PowerShell 可以把第一条检查命令写成：
+
+```powershell
+Test-Path "<技能目录>\xueqiu-archive\SKILL.md"
+```
+
+如果不能使用 Git，也可以从 GitHub 下载 ZIP 后解压；最终目录结构保持一致即可。更新已安装的技能时运行：
+
+```bash
+git -C <技能目录>/xueqiu-archive pull --ff-only
+```
+
+安装技能不会自动抓取任何文章。安装完成后，用户还需要明确提出归档、同步或校验请求，宿主再按 `SKILL.md` 的流程调用脚本。
+
+## 两种使用方式
+
+这个项目既可以当作普通 Python 工具运行，也可以作为一个技能目录交给支持 `SKILL.md` 约定的 AI 或自动化宿主使用。
+
+### 直接运行脚本
+
+进入本目录后，直接执行 `scripts/archive.py`。这种方式适合定时任务、批处理或你希望自己控制每一步的场景。完整参数和工作流见 [SKILL.md](SKILL.md)。
+
+```bash
+python scripts/archive.py --uid <雪球用户UID> --author "<作者昵称>" \
+  --root "<归档目录>" --missing-only
+```
+
+### 作为技能使用
+
+把整个 `xueqiu-archive/` 目录放进技能宿主配置的技能目录，并保持下面的结构不变：
+
+```text
+xueqiu-archive/
+├── SKILL.md
+├── scripts/archive.py
+└── references/
+```
+
+`SKILL.md` 是技能入口，里面的 `description` 用来说明什么时候应该调用它；`scripts/archive.py` 负责实际抓取、同步和自检。宿主可以根据用户的自然语言请求选择对应流程，例如：
+
+- “把这个雪球作者的专栏归档到指定目录。”
+- “同步上次归档后发布的新文章。”
+- “检查这份归档有没有改文、缺图或摘要问题。”
+
+技能本身不依赖某一个特定模型或平台。宿主负责理解用户请求、确定 UID 和输出目录，并按 `SKILL.md` 的流程调用脚本；脚本仍然是独立可执行的 Python 程序。
+
 ## 适合什么时候使用
 
 - 想长期保存某个雪球作者的公开专栏
@@ -13,6 +74,12 @@
 - 检查已有归档是否缺文件、缺图片或出现内容污染
 
 它只处理公开可见内容，不尝试绕过登录、付费、粉丝权限或反爬限制。
+
+## 环境要求
+
+- Python 3，脚本只使用标准库，不需要额外安装 Python 包
+- 首次归档、增量同步和改文检测需要网络；`--verify`、`--pending-summaries` 和 `--check-summaries` 可以离线运行
+- 下面的多行示例使用 Bash 的 `\` 续行写法；在 PowerShell 中可以把命令写成一行，或把 `\` 换成反引号 `` ` ``
 
 ## 快速开始
 
